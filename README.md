@@ -1,6 +1,6 @@
 # @ngageoint/closure-webpack-plugin
 
-This project is forked from [closure-webpack-plugin](https://github.com/ngageoint/closure-webpack-plugin) to provide additional support and maintenance.
+This project is forked from [closure-webpack-plugin](https://github.com/webpack-contrib/closure-webpack-plugin) to provide additional support and maintenance.
 
 This plugin supports the use of Google's Closure Tools with webpack.
 
