@@ -923,37 +923,6 @@ class ClosureCompilerPlugin {
    *   }>>}
    */
   runCompiler(compilation, flags, sources) {
-    const platform = getFirstSupportedPlatform(this.options.platform);
-    if (platform.toLowerCase() === 'javascript') {
-      return new Promise((resolve, reject) => {
-        function convertError(level, compilerError) {
-          return {
-            source: compilerError.file,
-            line: compilerError.lineNo,
-            description: compilerError.description,
-            level,
-          };
-          // {source, line, description, level: 'error'|'info'|'warning'}
-          // {file: file, description: description, type: type, lineNo: lineNo, charNo: charNo};
-        }
-        const { jsCompiler: ClosureCompiler } = googleClosureCompiler;
-        const compilerRunner = new ClosureCompiler(flags);
-        const compilationResult = compilerRunner.run(sources);
-
-        const warnings = Array.prototype.slice.call(compilationResult.warnings);
-        const errors = Array.prototype.slice.call(compilationResult.errors);
-        const allErrors = warnings
-          .map(convertError.bind(null, 'warning'))
-          .concat(errors.map(convertError.bind(null, 'error')));
-        this.reportErrors(compilation, allErrors);
-        if (errors.length > 0) {
-          reject();
-          return;
-        }
-
-        resolve(compilationResult.compiledFiles);
-      });
-    }
     return new Promise((resolve, reject) => {
       flags = Object.assign({}, flags, {
         error_format: 'JSON',
@@ -965,6 +934,7 @@ class ClosureCompilerPlugin {
         this.options.extraCommandArgs
       );
       compilerRunner.spawnOptions = { stdio: 'pipe' };
+      const platform = getFirstSupportedPlatform(this.options.platform);
       if (platform.toLowerCase() === 'native') {
         compilerRunner.JAR_PATH = null;
         compilerRunner.javaPath = getNativeImagePath();
@@ -1045,7 +1015,10 @@ class ClosureCompilerPlugin {
         resolve(outputFiles);
       });
 
-      const buffer = new Buffer(JSON.stringify(sources), 'utf8');
+      // Ignore errors (EPIPE) if the compiler input stream is closed
+      compilerProcess.stdin.on('error', (err) => {});
+
+      const buffer = Buffer.from(JSON.stringify(sources), 'utf8');
       const readable = new Readable();
       readable._read = () => {};
       readable.push(buffer);
@@ -1382,7 +1355,7 @@ class ClosureCompilerPlugin {
 ClosureCompilerPlugin.DEFAULT_OPTIONS = {
   childCompilations: false,
   mode: 'STANDARD',
-  platform: ['native', 'java', 'javascript'],
+  platform: ['native', 'java'],
   test: /\.js(\?.*)?$/i,
   extraCommandArgs: [],
 };
