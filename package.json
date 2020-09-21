@@ -11,7 +11,6 @@
   ],
   "scripts": {
     "commitlint": "commitlint",
-    "commitmsg": "commitlint -e $GIT_PARAMS",
     "lint": "eslint --cache src test",
     "ci:lint:commits": "commitlint --from=${CIRCLE_BRANCH} --to=${CIRCLE_SHA1}",
     "lint-staged": "lint-staged",
@@ -70,5 +69,10 @@
       "eslint --fix",
       "git add"
     ]
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -e $GIT_PARAMS"
+    }
   }
 }
