@@ -25,7 +25,21 @@ class GoogLoaderSuffixDependencyTemplate {
 
     let content = '';
     if (dep.isGoogModule) {
-      content = '\nreturn exports; });';
+      //
+      // If the module was loaded with declareLegacyNamespace, ensure existing
+      // globals on the module path aren't replaced by merging the exports into
+      // the existing object.
+      //
+      // This merge order is intended to preserve the load order of the files.
+      //
+      content = `
+if (goog.moduleLoaderState_.declareLegacyNamespace) {
+  const existingExports = goog.module.get(goog.moduleLoaderState_.moduleName);
+  if (existingExports) {
+    exports = Object.assign(existingExports, exports);
+  }
+}
+return exports; });`;
     }
     content += `
 goog.moduleLoaderState_ = googPreviousLoaderState__;`;
