@@ -1,6 +1,6 @@
 {
   "name": "@ngageoint/closure-webpack-plugin",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Webpack Google Closure Compiler and Closure Library plugin",
   "author": "Chad Killingsworth (@ChadKillingsworth)",
   "license": "MIT",
