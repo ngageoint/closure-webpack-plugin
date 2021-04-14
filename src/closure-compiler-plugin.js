@@ -30,6 +30,11 @@ const ENTRY_CHUNK_WRAPPER =
   '(function(__wpcc){%s}).call(this || window, (window.__wpcc = window.__wpcc || {}));';
 
 /**
+ * @type {string}
+ */
+const PLUGIN_NAME = 'closure-webpack-plugin';
+
+/**
  * @typedef {Map<string, {
  *   name:string,
  *   parentNames:!Set<string>,
@@ -73,11 +78,7 @@ const PLUGIN = { name: 'closure-compiler-plugin' };
 
 class ClosureCompilerPlugin {
   constructor(options, compilerFlags) {
-    validateOptions(
-      closureCompilerPluginSchema,
-      options || {},
-      'closure-webpack-plugin'
-    );
+    validateOptions(closureCompilerPluginSchema, options || {}, PLUGIN_NAME);
     this.options = Object.assign(
       {},
       ClosureCompilerPlugin.DEFAULT_OPTIONS,
@@ -1003,7 +1004,6 @@ class ClosureCompilerPlugin {
           }
 
           this.reportErrors(compilation, errors);
-          // TODO(ChadKillingsworth) Figure out how to report the stats
         }
 
         if (exitCode > 0) {
@@ -1342,10 +1342,26 @@ class ClosureCompilerPlugin {
       } else {
         formattedMsg = `closure-compiler: ${error.description.trim()}`;
       }
-      if (error.level === 'error') {
-        compilation.errors.push(new Error(formattedMsg));
-      } else if (error.level !== 'info') {
-        compilation.warnings.push(new Error(formattedMsg));
+
+      switch (error.level) {
+        case 'error':
+          compilation.errors.push(new Error(formattedMsg));
+          break;
+        case 'info':
+          // Log the compilation result. Logs as an error/warning if either of those were encountered in compilation.
+          // Otherwise logs using a webpack logger for the plugin.
+          if (compilation.errors.length) {
+            compilation.errors.push(new Error(formattedMsg));
+          } else if (compilation.warnings.length) {
+            compilation.warnings.push(new Error(formattedMsg));
+          } else {
+            const logger = compilation.getLogger(PLUGIN_NAME);
+            logger.info(formattedMsg);
+          }
+          break;
+        default:
+          compilation.warnings.push(new Error(formattedMsg));
+          break;
       }
     });
   }
